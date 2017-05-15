@@ -50,9 +50,9 @@ FIND_PACKAGE(Gnuplot REQUIRED)
 
 # Define environment variable OpenCV_DIR to point to for example
 # "C:\OpenCV\opencv\build"
-if (EXISTS "$ENV{OpenCV_DIR}")
-    INCLUDE("$ENV{OpenCV_DIR}/OpenCVConfig.cmake")
-endif()
+#if (EXISTS "$ENV{OpenCV_DIR}")
+#    INCLUDE("$ENV{OpenCV_DIR}/OpenCVConfig.cmake")
+#endif()
 
 FIND_PACKAGE(OpenCV 2.0.0 REQUIRED)
 INCLUDE_DIRECTORIES(SYSTEM ${OpenCV_INCLUDE_DIRS})
@@ -231,6 +231,9 @@ MACRO(N2D2_MAKE_LIBRARY name)
     endif()
 
     TARGET_LINK_LIBRARIES(${name} ${OpenCV_LIBS})
+    INSTALL(TARGETS ${name}
+        ARCHIVE DESTINATION lib
+    )
 ENDMACRO()
 
 MACRO(N2D2_COPY_DIRECTORY target src dst)
