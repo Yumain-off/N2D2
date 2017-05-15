@@ -34,6 +34,7 @@ if(MSVC)
         SET(CMAKE_REQUIRED_INCLUDES
             "${CMAKE_REQUIRED_INCLUDES} $ENV{DIRENT_INCLUDE_DIR}")
         INCLUDE_DIRECTORIES(SYSTEM $ENV{DIRENT_INCLUDE_DIR})
+        MESSAGE(STATUS "DIRENT_INCLUDE_DIR : $ENV{DIRENT_INCLUDE_DIR}")
     endif()
 
     INCLUDE(CheckIncludeFile)
@@ -179,6 +180,7 @@ ENDMACRO()
 MACRO(N2D2_INCLUDE inc_path)
     GET_DIRECTORIES(headers_dirs ${inc_path}/*.hpp)
     INCLUDE_DIRECTORIES(${headers_dirs} ${inc_path})
+    INSTALL(DIRECTORY ${inc_path} DESTINATION include )
 ENDMACRO()
 
 SET(SRC "")
