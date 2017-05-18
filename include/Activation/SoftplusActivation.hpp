@@ -52,7 +52,7 @@ public:
     {
         return Type;
     };
-    virtual ~SoftplusActivation() {};
+    virtual ~SoftplusActivation() throw() {};
 };
 }
 

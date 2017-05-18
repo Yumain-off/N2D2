@@ -51,7 +51,7 @@ public:
     {
         return std::shared_ptr<PolygonalROI<T> >(doClone());
     }
-    virtual ~PolygonalROI() {};
+    virtual ~PolygonalROI() throw() {};
 
     using Geometric::Polygon<T>::points;
 

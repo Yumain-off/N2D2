@@ -52,7 +52,7 @@ public:
     {
         return Type;
     };
-    virtual ~SaturationActivation() {};
+    virtual ~SaturationActivation() throw() {};
 };
 }
 

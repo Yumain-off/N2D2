@@ -53,7 +53,7 @@ public:
     {
         return Type;
     };
-    virtual ~RectifierActivation() {};
+    virtual ~RectifierActivation() throw() {};
 
 protected:
     /// Leak slope

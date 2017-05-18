@@ -62,7 +62,7 @@ public:
     {
         return Type;
     };
-    virtual ~TanhActivation() {};
+    virtual ~TanhActivation() throw() {};
 
 protected:
     /// Alpha

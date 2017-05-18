@@ -32,7 +32,7 @@ public:
     virtual const char* getType() const = 0;
     virtual void propagate(Tensor4d<T>* data) = 0;
     virtual void backPropagate(Tensor4d<T>* data, Tensor4d<T>* diffData) = 0;
-    virtual ~Activation() {};
+    virtual ~Activation() throw() {};
 };
 }
 

@@ -54,7 +54,7 @@ public:
     {
         return (mWithLoss) ? TypeWithLoss : Type;
     };
-    virtual ~LogisticActivation() {};
+    virtual ~LogisticActivation() throw() {};
 
 protected:
     const bool mWithLoss;
