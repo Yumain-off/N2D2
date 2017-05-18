@@ -21,6 +21,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 PROJECT(N2D2-OS)
 
+set(CMAKE_CXX_STANDARD 11)
 INCLUDE(N2D2.cmake)
 
 N2D2_INCLUDE(include)
@@ -33,3 +34,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 add_subdirectory(exec)
 add_subdirectory(tests)
+
+add_dependencies(n2d2 N2D2-OS)
+add_dependencies(n2d2_live N2D2-OS)
+add_dependencies(n2d2_live_fcnn N2D2-OS)
