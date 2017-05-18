@@ -46,6 +46,8 @@ if(MSVC)
     endif()
 endif()
 
+OPTION(NOCUDA "DISABLE CUDA based build" OFF)
+
 FIND_PACKAGE(Gnuplot REQUIRED)
 
 # Define environment variable OpenCV_DIR to point to for example
@@ -53,6 +55,7 @@ FIND_PACKAGE(Gnuplot REQUIRED)
 #if (EXISTS "$ENV{OpenCV_DIR}")
 #    INCLUDE("$ENV{OpenCV_DIR}/OpenCVConfig.cmake")
 #endif()
+# Not working well with self build OpenCV installations
 
 FIND_PACKAGE(OpenCV 2.0.0 REQUIRED)
 INCLUDE_DIRECTORIES(SYSTEM ${OpenCV_INCLUDE_DIRS})
@@ -63,9 +66,10 @@ message(STATUS "    libraries: ${OpenCV_LIBS}")
 
 FIND_PACKAGE(OpenMP)
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OpenMP_CXX_FLAGS}")
+if(NOT ${NOCUDA})
+    FIND_PACKAGE(CUDA)
 
-FIND_PACKAGE(CUDA)
-if (CUDA_FOUND)
+    if (CUDA_FOUND)
     INCLUDE_DIRECTORIES(SYSTEM ${CUDA_INCLUDE_DIRS})
     GET_FILENAME_COMPONENT(CUDA_LIB_DIR ${CUDA_CUDART_LIBRARY} PATH)
 
@@ -121,6 +125,9 @@ if (CUDA_FOUND)
 
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUDA=1")
         SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
+            IF(MSVC)
+                SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}")
+            ELSEIF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
         SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
 
         if (MSVC)
@@ -131,6 +138,7 @@ if (CUDA_FOUND)
     else()
         MESSAGE(WARNING "CUDA found but CuDNN seems to be missing - you can"
             " download it and install it from http://www.nvidia.com")
+    endif()
     endif()
 endif()
 
@@ -153,6 +161,8 @@ endif()
 # Compiler flags
 if(MSVC)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Os /MT")
     ADD_DEFINITIONS(-D_CONSOLE -D_VISUALC_ -DNeedFunctionPrototypes)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS -D_VARIADIC_MAX=10)
     # /wd4250 disable 'class1' : inherits 'class2::member' via dominance
@@ -216,35 +226,45 @@ MACRO(N2D2_MAKE_LIBRARY name)
     SET(N2D2_LIB ${name})
     LINK_DIRECTORIES(${OpenCV_LIB_DIR})
 
+    ADD_LIBRARY( ${name}_obj OBJECT ${SRC} ${HDR})
+    SET(LNK_LIBS "${OpenCV_LIBS}")
+
     if (CUDA_FOUND)
         if (NOT "${CU_SRC}" STREQUAL "")
-            CUDA_ADD_LIBRARY(${name} STATIC ${SRC} ${CU_SRC})
+            LINK_DIRECTORIES( ${LINK_DIRECTORIES} "${CUDA_LIB_DIR}")
+            LINK_DIRECTORIES( ${LINK_DIRECTORIES} "${CUDNN_LIB_DIR}")
+            CUDA_ADD_LIBRARY(${name} STATIC $<TARGET_OBJECTS:${name}_obj> ${CU_SRC} )
+            SET(LNK_LIBS "${CUDA_LIBS};${CUDNN_LIBS};${LNK_LIBS}")
         else()
-            ADD_LIBRARY(${name} STATIC ${SRC})
+            ADD_LIBRARY(${name} STATIC $<TARGET_OBJECTS:${name}_obj>)
         endif()
 
-        LINK_DIRECTORIES(${CUDA_LIB_DIR})
-        LINK_DIRECTORIES(${CUDNN_LIB_DIR})
-        TARGET_LINK_LIBRARIES(${name} ${CUDA_LIBS})
-        TARGET_LINK_LIBRARIES(${name} ${CUDNN_LIBS})
+        message(STATUS "CUDA_LIB_DIR: ${CUDA_LIB_DIR}")
+        message(STATUS "CUDA_LIBS: ${CUDA_LIBS}")
+        message(STATUS "CUDNN_LIB_DIR: ${CUDNN_LIB_DIR}")
+        message(STATUS "CUDNN_LIBS: ${CUDNN_LIBS}")
+
     else()
-        ADD_LIBRARY(${name} STATIC ${SRC})
+        ADD_LIBRARY(${name} STATIC $<TARGET_OBJECTS:${name}_obj>)
     endif()
 
     if (PUGIXML_FOUND)
-        TARGET_LINK_LIBRARIES(${name} ${PUGIXML_LIBRARIES})
+        set(LNK_LIBS "${PUGIXML_LIBRARIES};${LNK_LIBS}")
     endif()
 
     if (MongoDB_FOUND)
-        TARGET_LINK_LIBRARIES(${name} ${MongoDB_LIBRARIES})
-        TARGET_LINK_LIBRARIES(${name} ${Boost_THREAD_LIBRARY}
-            ${Boost_FILESYSTEM_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY}
-            ${Boost_SYSTEM_LIBRARY} ${OPENSSL_LIBRARIES})
+        set(LNK_LIBS "${MongoDB_LIBRARIES};${Boost_THREAD_LIBRARY};${Boost_FILESYSTEM_LIBRARY};${Boost_PROGRAM_OPTIONS_LIBRARY};${Boost_SYSTEM_LIBRARY};${OPENSSL_LIBRARIES};${LNK_LIBS}")
     endif()
 
-    TARGET_LINK_LIBRARIES(${name} ${OpenCV_LIBS})
+    message(STATUS "Linking with: ${LNK_LIBS}")
+
+    TARGET_LINK_LIBRARIES(${name} ${LNK_LIBS})
+    SET_TARGET_PROPERTIES(${name} PROPERTIES LINKER_LANGUAGE CXX DEBUG_POSTFIX d)
+
     INSTALL(TARGETS ${name}
+        LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
+        COMPONENT develop
     )
 ENDMACRO()
 
