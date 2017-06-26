@@ -74,11 +74,17 @@ if (CUDA_FOUND)
     message(STATUS "    include path: ${CUDA_INCLUDE_DIRS}")
     message(STATUS "    libraries: ${CUDA_LIBRARIES}")
 
+    if(MSVC)
+        set(CUDNN_LIB_NAME "cudnn.lib")
+    else()
+        set(CUDNN_LIB_NAME "libcudnn.so")
+    endif()
+
     FIND_PATH(CUDNN_INCLUDE_DIR cudnn.h
         PATHS ${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_INCLUDE}
         DOC "Path to CuDNN include directory." )
-    FIND_LIBRARY(CUDNN_LIB_DIR NAMES libcudnn.so
-        PATHS ${CUDNN_INCLUDE_DIR} ${CUDA_CUDART_LIBRARY}
+    FIND_LIBRARY(CUDNN_LIB_DIR NAMES ${CUDNN_LIB_NAME}
+        PATHS ${CUDNN_INCLUDE_DIR} ${CUDA_LIB_DIR}
         DOC "Path to CuDNN library.")
 
     if (CUDNN_INCLUDE_DIR AND CUDNN_LIB_DIR)
@@ -116,6 +122,12 @@ if (CUDA_FOUND)
         SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUDA=1")
         SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
         SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
+
+        if (MSVC)
+            SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -MD")
+        else()
+            SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -fPIC")
+        endif()
     else()
         MESSAGE(WARNING "CUDA found but CuDNN seems to be missing - you can"
             " download it and install it from http://www.nvidia.com")
@@ -148,7 +160,7 @@ if(MSVC)
     ADD_DEFINITIONS(/wd4250 /wd4512)
 elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Werror")
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC")
 
     if(${OpenCV_VERSION} EQUAL "2.0.0")
         MESSAGE(WARNING "Compiling with _GLIBCXX_PARALLEL flag")

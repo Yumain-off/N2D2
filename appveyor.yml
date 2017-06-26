@@ -18,31 +18,52 @@
 #    knowledge of the CeCILL-C license and that you accept its terms.
 ################################################################################
 
-os: Visual Studio 2013
+os: Visual Studio 2015
 configuration: Release
+platform: x64
+
+environment:
+  DIRENT_INCLUDE_DIR: C:\projects\dirent\include
+  matrix:
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+    BUILD_TARGET: Visual Studio 12 2013 Win64
+    OPENCV_BIN: C:\tools\opencv\build\x64\vc12\bin
+    OpenCV_DIR: C:\tools\opencv\build
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+    BUILD_TARGET: Visual Studio 12 2013 Win64
+    OPENCV_BIN: C:\tools\opencv\build\x64\vc12\bin
+    OpenCV_DIR: C:\tools\opencv\build
+    USE_CUDA: 1
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    BUILD_TARGET: Visual Studio 14 2015 Win64
+    OPENCV_BIN: C:\tools_vc14\opencv\build\x64\vc14\bin
+    OpenCV_DIR: C:\tools_vc14\opencv\build
+  - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2015
+    BUILD_TARGET: Visual Studio 14 2015 Win64
+    OPENCV_BIN: C:\tools_vc14\opencv\build\x64\vc14\bin
+    OpenCV_DIR: C:\tools_vc14\opencv\build
+    USE_CUDA: 1
 
 install:
-  - git clone -q --branch=master https://github.com/tronkko/dirent.git C:\projects\dirent
-  - cmd: choco install gnuplot
-  - cmd: choco install opencv -version 2.4.13
+  - cmd: .appveyor\install.cmd
 
 cache:
   - C:\ProgramData\chocolatey\bin -> appveyor.yml
   - C:\ProgramData\chocolatey\lib -> appveyor.yml
   - C:\Program Files\gnuplot -> appveyor.yml
   - C:\tools\opencv -> appveyor.yml
-
-environment:
-  DIRENT_INCLUDE_DIR: C:\projects\dirent\include
-  OpenCV_DIR: C:\tools\opencv\build
+  - C:\tools_vc14\opencv -> appveyor.yml
 
 before_build:
   - cmd: SET PATH=C:\Program Files\gnuplot\bin;%PATH%
   - mkdir build
   - cd build
-  - cmake .. -G"Visual Studio 12 2013"
-  - cmd: SET PATH=C:\Tools\opencv\build\x86\vc12\bin;%PATH%
+  - cmake .. -G"%BUILD_TARGET%"
+  - cmd: SET PATH=%OPENCV_BIN%;%PATH%
 
 matrix:
   fast_finish: true
 
+build:
+  parallel: true
+  verbosity: minimal
