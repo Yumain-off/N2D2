@@ -70,75 +70,76 @@ if(NOT ${NOCUDA})
     FIND_PACKAGE(CUDA)
 
     if (CUDA_FOUND)
-    INCLUDE_DIRECTORIES(SYSTEM ${CUDA_INCLUDE_DIRS})
-    GET_FILENAME_COMPONENT(CUDA_LIB_DIR ${CUDA_CUDART_LIBRARY} PATH)
+        INCLUDE_DIRECTORIES(SYSTEM ${CUDA_INCLUDE_DIRS})
+        GET_FILENAME_COMPONENT(CUDA_LIB_DIR ${CUDA_CUDART_LIBRARY} PATH)
 
-    message(STATUS "CUDA library status:")
-    message(STATUS "    version: ${CUDA_VERSION_STRING}")
-    message(STATUS "    include path: ${CUDA_INCLUDE_DIRS}")
-    message(STATUS "    libraries: ${CUDA_LIBRARIES}")
+        message(STATUS "CUDA library status:")
+        message(STATUS "    version: ${CUDA_VERSION_STRING}")
+        message(STATUS "    include path: ${CUDA_INCLUDE_DIRS}")
+        message(STATUS "    libraries: ${CUDA_LIBRARIES}")
 
-    if(MSVC)
-        set(CUDNN_LIB_NAME "cudnn.lib")
-    else()
-        set(CUDNN_LIB_NAME "libcudnn.so")
-    endif()
-
-    FIND_PATH(CUDNN_INCLUDE_DIR cudnn.h
-        PATHS ${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_INCLUDE}
-        DOC "Path to CuDNN include directory." )
-    FIND_LIBRARY(CUDNN_LIB_DIR NAMES ${CUDNN_LIB_NAME}
-        PATHS ${CUDNN_INCLUDE_DIR} ${CUDA_LIB_DIR}
-        DOC "Path to CuDNN library.")
-
-    if (CUDNN_INCLUDE_DIR AND CUDNN_LIB_DIR)
-        file(READ ${CUDNN_INCLUDE_DIR}/cudnn.h CUDNN_FILE_CONTENTS)
-
-        string(REGEX MATCH "define CUDNN_MAJOR * +([0-9]+)"
-               CUDNN_VERSION_MAJOR "${CUDNN_FILE_CONTENTS}")
-        string(REGEX REPLACE "define CUDNN_MAJOR * +([0-9]+)" "\\1"
-               CUDNN_VERSION_MAJOR "${CUDNN_VERSION_MAJOR}")
-        string(REGEX MATCH "define CUDNN_MINOR * +([0-9]+)"
-               CUDNN_VERSION_MINOR "${CUDNN_FILE_CONTENTS}")
-        string(REGEX REPLACE "define CUDNN_MINOR * +([0-9]+)" "\\1"
-               CUDNN_VERSION_MINOR "${CUDNN_VERSION_MINOR}")
-        string(REGEX MATCH "define CUDNN_PATCHLEVEL * +([0-9]+)"
-               CUDNN_VERSION_PATCH "${CUDNN_FILE_CONTENTS}")
-        string(REGEX REPLACE "define CUDNN_PATCHLEVEL * +([0-9]+)" "\\1"
-               CUDNN_VERSION_PATCH "${CUDNN_VERSION_PATCH}")
-
-        if(NOT CUDNN_VERSION_MAJOR)
-            set(CUDNN_VERSION "?")
+        if(MSVC)
+            set(CUDNN_LIB_NAME "cudnn.lib")
         else()
-            set(CUDNN_VERSION "${CUDNN_VERSION_MAJOR}.${CUDNN_VERSION_MINOR}.${CUDNN_VERSION_PATCH}")
+            set(CUDNN_LIB_NAME "libcudnn.so")
         endif()
 
-        message(STATUS "CuDNN library status:")
-        message(STATUS "    version: ${CUDNN_VERSION}")
-        message(STATUS "    include path: ${CUDNN_INCLUDE_DIR}")
-        message(STATUS "    libraries: ${CUDNN_LIB_DIR}")
+        FIND_PATH(CUDNN_INCLUDE_DIR cudnn.h
+            PATHS ${CUDA_INCLUDE_DIRS} ${CUDA_TOOLKIT_INCLUDE}
+            DOC "Path to CuDNN include directory." )
+        FIND_LIBRARY(CUDNN_LIB_DIR NAMES ${CUDNN_LIB_NAME}
+            PATHS ${CUDNN_INCLUDE_DIR} ${CUDA_LIB_DIR}
+            DOC "Path to CuDNN library.")
 
-        INCLUDE_DIRECTORIES(SYSTEM ${CUDNN_INCLUDE_DIR})
+        if (CUDNN_INCLUDE_DIR AND CUDNN_LIB_DIR)
+            file(READ ${CUDNN_INCLUDE_DIR}/cudnn.h CUDNN_FILE_CONTENTS)
 
-        SET(CUDA_LIBS "cudart;cublas;cudadevrt")
-        SET(CUDNN_LIBS "cudnn")
+            string(REGEX MATCH "define CUDNN_MAJOR * +([0-9]+)"
+                   CUDNN_VERSION_MAJOR "${CUDNN_FILE_CONTENTS}")
+            string(REGEX REPLACE "define CUDNN_MAJOR * +([0-9]+)" "\\1"
+                   CUDNN_VERSION_MAJOR "${CUDNN_VERSION_MAJOR}")
+            string(REGEX MATCH "define CUDNN_MINOR * +([0-9]+)"
+                   CUDNN_VERSION_MINOR "${CUDNN_FILE_CONTENTS}")
+            string(REGEX REPLACE "define CUDNN_MINOR * +([0-9]+)" "\\1"
+                   CUDNN_VERSION_MINOR "${CUDNN_VERSION_MINOR}")
+            string(REGEX MATCH "define CUDNN_PATCHLEVEL * +([0-9]+)"
+                   CUDNN_VERSION_PATCH "${CUDNN_FILE_CONTENTS}")
+            string(REGEX REPLACE "define CUDNN_PATCHLEVEL * +([0-9]+)" "\\1"
+                   CUDNN_VERSION_PATCH "${CUDNN_VERSION_PATCH}")
 
-        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUDA=1")
-        SET(CUDA_PROPAGATE_HOST_FLAGS OFF)
-            IF(MSVC)
-                SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}")
-            ELSEIF(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-        SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
+            if(NOT CUDNN_VERSION_MAJOR)
+                set(CUDNN_VERSION "?")
+            else()
+                set(CUDNN_VERSION "${CUDNN_VERSION_MAJOR}.${CUDNN_VERSION_MINOR}.${CUDNN_VERSION_PATCH}")
+            endif()
 
-        if (MSVC)
-            SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -MD")
-        else()
-            SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -fPIC")
+            message(STATUS "CuDNN library status:")
+            message(STATUS "    version: ${CUDNN_VERSION}")
+            message(STATUS "    include path: ${CUDNN_INCLUDE_DIR}")
+            message(STATUS "    libraries: ${CUDNN_LIB_DIR}")
+
+            INCLUDE_DIRECTORIES(SYSTEM ${CUDNN_INCLUDE_DIR})
+
+            set(CUDA_LIBS "cudart;cublas;cudadevrt")
+            set(CUDNN_LIBS "cudnn")
+
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCUDA=1")
+            set(CUDA_PROPAGATE_HOST_FLAGS OFF)
+            if(MSVC)
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}")
+            elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+                set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
+
+                if (MSVC)
+                    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -MD")
+                else()
+                    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -fPIC")
+                endif()
+            else()
+                MESSAGE(WARNING "CUDA found but CuDNN seems to be missing - you can"
+                    " download it and install it from http://www.nvidia.com")
+            endif()
         endif()
-    else()
-        MESSAGE(WARNING "CUDA found but CuDNN seems to be missing - you can"
-            " download it and install it from http://www.nvidia.com")
-    endif()
     endif()
 endif()
 
